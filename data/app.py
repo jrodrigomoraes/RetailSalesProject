@@ -1,3 +1,5 @@
+import os
+import json
 import streamlit as st
 import pandas as pd
 from google.cloud import bigquery
@@ -10,8 +12,18 @@ import plotly.graph_objects as go
 st.set_page_config(page_title="Análise e Previsão de Vendas", layout="wide")
 st.title("Análise e Previsão de Vendas")
 
+# Acessando as credenciais do BigQuery armazenadas no painel de Secrets do Streamlit
+credentials = st.secrets["google_cloud"]["credentials_json"]
+
+# Salvando temporariamente o conteúdo JSON das credenciais
+with open("google_credentials.json", "w") as f:
+    f.write(credentials)
+
+# Definindo a variável de ambiente para autenticação com o Google Cloud
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "google_credentials.json"
+
 # Configuração do cliente BigQuery
-client = bigquery.Client.from_service_account_json("arctic-nectar-443501-m3-6f9b001f85f2.json")
+client = bigquery.Client()
 
 @st.cache_data
 def fetch_data(query):
@@ -39,17 +51,10 @@ Abaixo estão as análises interativas realizadas utilizando Python, conectando-
 Esses gráficos fornecem uma visão detalhada e dinâmica dos dados, permitindo explorar insights sobre a receita total, 
 volume de vendas e estoque disponível por data. Além disso, também podemos selecionar a Previsão de Vendas e escolher
 qual modelo utilizaremos na previsão de vendas com base em dados históricos.
-
 """
-#st.cache_data é um decorador. Ele é usado para otimizar o carregamento de dados em um aplicativo, armazenando os resultados de uma função
-#(geralmente, de consulta a banco de dados, carregamento de arquivos, ou execução de operações caras) em cache.
-
-#A função fetch_data consulta dados de um banco de dados. O decorador faz com que o streamlit armazene
-#os resultados dessa consulta em cache.
 
 # Carregar Dados e Views
 views = fetch_views()
-
 
 # Inspecionar as Views carregadas
 for name, df in views.items():
@@ -159,7 +164,8 @@ if section == "Análise de Dados":
     fig_receita.update_traces(
         textinfo='value+percent',  # Mostra o valor e a porcentagem
         texttemplate='%{value:.2f}<br>(%{percent})',
-        hovertemplate='%{label}<br>Receita: %{value:.2f}<br>Porcentagem: %{percent:.1f}%'
+        # Formata o valor com 2 casas decimais e a porcentagem com 1 casa decimal
+        hovertemplate='%{label}<br>Receita: %{value:.2f}<br>Porcentagem: %{percent:.1f}%'  # Exibe valor e porcentagem no hover
     )
 
     # Mostrar o gráfico
@@ -175,7 +181,7 @@ if section == "Análise de Dados":
         color="faixa_preco",  # Diferencia as barras por cor com base na faixa de preço
         title="Volume Médio por Faixa de Preço",
         labels={'faixa_preco': 'Faixa de Preço', 'volume_medio_vendas': 'Volume Médio de Vendas'},
-        color_discrete_map={"Alto": "indigo", "Médio": "darkviolet", "Baixo": "darkorchid"}
+        color_discrete_map={"Alto": "indigo", "Médio": "darkviolet", "Baixo": "darkorchid"}  # Definir cores personalizadas
     )
     st.plotly_chart(fig_volume)
 
@@ -188,7 +194,7 @@ elif section == "Previsão de Vendas":
     st.write(f"Modelo Selecionado: {model_choice}")
 
     # Carregar Dados de Teste e Modelos Treinados
-    X_test = pd.read_csv("X_test.csv") 
+    X_test = pd.read_csv("X_test.csv")  # Ajuste o caminho se necessário
     y_test = pd.read_csv("y_test.csv")["vendas_futuras"]
 
     model_file = "random_forest" if model_choice == "Random Forest" else "linear_regression"
@@ -211,4 +217,3 @@ elif section == "Previsão de Vendas":
     st.plotly_chart(fig_comparison)
 
     "No futuro, pretendo inserir um selectbox para que o usuário escolha as features para testar"
-
