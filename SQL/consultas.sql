@@ -1,3 +1,5 @@
+
+
 CREATE OR REPLACE TABLE `arctic-nectar-443501-m3.retail_sales.TABLE_FINAL` AS
 SELECT * 
 FROM `arctic-nectar-443501-m3.retail_sales.TABLE_RETAIL`;
