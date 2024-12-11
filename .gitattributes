@@ -1,3 +1,2 @@
 *.sql linguist-language=SQL
 *.py linguist-language=Python
-*.ipynb linguist-vendored
